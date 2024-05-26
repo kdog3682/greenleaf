@@ -9,33 +9,17 @@ import {
 } from "@lezer/html"
 import { pugFormatter } from "./pugFormatter.js"
 import { scriptSetupFormatter } from "./scriptSetupFormatter.js"
-import {stylusFormatter} from "./stylusFormatter.js"
+import { stylusFormatter } from "./stylusFormatter.js"
 // import {parseMixed} from "@lezer/common"
 import {
     findChildNodeRecursively,
+    getState,
     getStatef,
     iterateTopLevel,
     traverseBlue,
-    getState,
     viewNode,
     viewTree,
 } from "../functions.js"
-
-// const javascriptConfig = {
-// wrap: parseMixed((node, input) => {
-// if (node.name == 'TemplateString') {
-// const html = input.slice(1, -1)
-// if (looksLikeHtml(html)) {
-// return {
-// parser: nestedHtmlParser
-// }
-// }
-// }
-// }),
-// strict: true,
-// }
-
-// const nestedJavascriptParser = javascriptParser.configure(javascriptConfig)
 
 const tags = [
     {
@@ -47,7 +31,6 @@ const tags = [
             return true
         },
         parser: javascriptParser,
-        // parser: nestedJavascriptParser,
     },
 ]
 
@@ -58,17 +41,6 @@ const htmlConfig = {
 }
 const nestedHtmlParser = htmlParser.configure(htmlConfig)
 
-function getChain(node, ...args) {
-    for (let i = 0; i < args.length; i++) {
-        const arg = args[i]
-        node = node.getChild(arg)
-        if (!node) {
-            return
-        }
-    }
-    return node
-}
-
 const master = [
     {
         tag: "template",
@@ -78,7 +50,7 @@ const master = [
                 attributeKey: "lang",
                 attributeValue: "pug",
                 formatter: pugFormatter,
-                prepare: basicPrepare
+                prepare: basicPrepare,
             },
         ],
     },
@@ -90,7 +62,7 @@ const master = [
                 attributeKey: "setup",
                 attributeValue: "",
                 prepare(node, getText) {
-                    return node.getChild('Script')
+                    return node.getChild("Script")
                 },
                 formatter: scriptSetupFormatter,
             },
@@ -115,29 +87,32 @@ function vueFormatter(s) {
     const tree = nestedHtmlParser.parse(s)
     const getState = getStatef(s)
     const getText = getStatef(s, "text")
-    // return viewNode(tree.topNode, getState)
 
     const callback = (node) => {
         const openTag = node.getChild("OpenTag")
+
         if (!openTag) {
-            // empty text node
-            // most likely \n\n or smth similar
-            return 
+            return
         }
+
         const tagNameNode = openTag.getChild("TagName")
         const tag = getText(tagNameNode)
         const reference = master.find((x) => x.tag == tag)
+
         if (!reference) {
             return
         }
+
         const attributes = getAttributes(openTag, getText)
         const finder = ({ attributeKey, attributeValue }) => {
             return attributes[attributeKey] === attributeValue
         }
         const m = reference.matchers.find(finder)
+
         if (!m) {
             return
         }
+
         const { formatter, prepare } = m
         const wrapper = (s) => {
             // console.log({s})
@@ -149,11 +124,13 @@ function vueFormatter(s) {
                 text: "\n\n" + s.trim() + "\n\n",
                 options: {
                     indentText: false,
-                }
+                },
             }
             return xmlString(payload)
         }
-        const value = wrapper(formatter(prepare(node, getText), getText))
+        const value = wrapper(
+            formatter(prepare(node, getText), getText),
+        )
         return [reference.sortIndex, value]
     }
     const values = iterateTopLevel(tree.topNode, callback)
@@ -161,16 +138,6 @@ function vueFormatter(s) {
     return join(results)
 }
 
-const sample = `<template lang = 'pug'>p hi</template>
-<script setup>const a  = 1</script>
-<style lang = 'stylus'>
-body
-    color: blue
-    background: red
-    </style>
-`
-// console.log(vueFormatter(sample))
-// console.log( vueFormatter(
 
 function getAttributes(node, getText) {
     const attrNodes = node.getChildren("Attribute")
@@ -184,8 +151,22 @@ function getAttributes(node, getText) {
     })
 }
 
-            function basicPrepare(node, getText) {
-                const Text = node.getChild("Text") || node.getChild('StyleText')
-                const text = getText(Text)
-                return text
-            }
+function basicPrepare(node, getText) {
+    const Text = node.getChild("Text") ||
+        node.getChild("StyleText")
+    const text = getText(Text)
+    return text
+}
+
+
+
+
+const sample = `<template lang = 'pug'>p hi</template>
+<script setup>const a  = 1</script>
+<style lang = 'stylus'>
+body
+    color: blue
+    background: red
+    </style>
+`
+console.log(vueFormatter(sample))

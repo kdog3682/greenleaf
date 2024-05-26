@@ -38,6 +38,5 @@ function scriptSetupFormatter(node, getText) {
     return getText(node)
 }
 
-
-const args = await setupState(getStatef)
-console.log(scriptSetupFormatter(...args))
+// const args = await setupState(s)
+// console.log(scriptSetupFormatter(...args))
