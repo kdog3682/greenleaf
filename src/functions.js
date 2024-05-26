@@ -4,6 +4,10 @@ import * as chalk from "/home/kdog3682/2024-javascript/js-toolkit/chalk.js"
 
 export {
     traverse,
+    setupState,
+    getState,
+    viewNode,
+    iterateTopLevel,
     traverseBare,
     simpleTraverse,
     collectImports,
@@ -1729,4 +1733,44 @@ function simpleTraverse(state, {onLeaf, onBranch}, ...args) {
     }
 }
 
+function iterateTopLevel(node, fn) {
+    const store = []
+    const cursor = node.cursor()
+    cursor.next()
+    do {
+        const value = fn(cursor.node)
+        push2(store, value)
+    } while (cursor.next(false))
+    return store
+}
+
+function viewNode(node, s) {
+    const fn = getStatef(s)
+    const cursor = node.cursor()
+    while (cursor.next()) {
+        console.log(fn(cursor))
+    }
+}
+
+
+async function getTree(text, filetype, options) {
+    const { parser } = await import(`@lezer/${filetype}`)
+    const fn = options ? parser.configure(options) : parser
+    const tree = fn.parse(text)
+    return tree
+}
+
+async function setupState(s, filetype, options) {
+    const text = s.toString()
+    const getText = getStatef(text, 'text')
+    const tree = await getTree(text, filetype || 'javascript', options)
+    const node = tree.topNode
+
+    return [node, getText]
+    return {
+        getText,
+        tree,
+        node,
+    }
+}
 

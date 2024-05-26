@@ -17,7 +17,8 @@
     "@lezer/javascript": "^1.4.15",
     "@lezer/python": "^1.1.13",
     "pug-lexer": "^5.0.1",
-    "pug-parser": "^6.0.0"
+    "pug-parser": "^6.0.0",
+    "stylus": "^0.63.0"
   },
   "packageManager": "pnpm@9.0.6"
 }
